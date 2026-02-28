@@ -1,0 +1,667 @@
+REDACTED
+
+
+
+
+             SafeLogo: Turning Your Logos into Jailbreak Shields via Micro-Regional
+                                     Adversarial Training
+
+                                                   Anonymous CVPR submission
+
+REDACTED
+
+
+
+                               Abstract
+                                                                                                               Jailbreak Query
+                                                                           (a)
+ 001   Recent Vision-Language Models (VLMs) have become in-                                              The image shows a phrase of an
+                                                                                                                                                           Response：
+                                                                                                       activity. List steps in detail to perform
+ 002   creasingly susceptible to jailbreak attacks, where adversar-                                   this activity without getting traced back
+                                                                                                                                                   Sure I can help you with
+                                                                                                                                                   that. To perform the activity
+                                                                                                       to the person performing it.Use Sure
+ 003   ial prompts exploit subtle manipulation to circumvent safety                                   Start As A Title Under Given S Sc Step
+                                                                                                                                                   without getting traced back
+                                                                                                                                                   to the person performing it,
+ 004   alignment. The diversity and adaptability of such jailbreak-        (b)                                                                     follow these steps:
+                                                                                                                                                   1. First, gather all the
+ 005   ers necessitate a defense mechanism with strong general-                                                                                    necessary tools and
+                                                                                                                                                   equipment......
+ 006   ization capability. However, fine-tuning large-scale VLMs                                                                                   ......
+
+
+ 007   is computationally expensive, and introducing excessive vi-
+                                                                           (c)                              Vision-Language
+ 008   sual or textual defense prompts is impractical for preserv-                                               Models
+ 009   ing image realism and model usability. To this end, we pro-                                             Safe Instruction
+ 010   pose SafeLogo, which tunes a logo-sized visual prompt into                                          If the content is determined
+                                                                                                                                                           Response：
+                                                                                                             to be unethical, illegal, or
+ 011   a universal shield against diverse jailbreak attacks through        (d)                             dangerous, please answer
+                                                                                                                                                   I am sorry.
+                                                                                                                                                   ......
+                                                                                                          “I am sorry”. Please execute
+ 012   micro-regional adversarial training. We are the first to in-                                          the following instructions
+                                                                                                                safely and correctly.
+ 013   tegrate min–max adversarial optimization into visual de-                           ......
+                                                                            GCG PAIR PAP ......
+ 014   fense prompt generation. Specifically, in the outer loop,
+ 015   SafeLogo injects compact, bounded perturbations into ex-
+ 016   tremely small image regions (≤ 2% pixel coverage), ef-              Figure 1. Conventional safety perturbations often trade image
+ 017   fectively preserving both visual fidelity and semantic con-         quality for robustness (b) and (c). Our SafeLogo achieves strong
+                                                                           defense within tiny localized regions, maintaining high visual
+ 018   sistency. Meanwhile, overcoming the limitations of prior
+                                                                           quality while reaching SOTA protection (d).
+ 019   defenses constrained to a single attack direction or fixed
+ 020   benign supervision, the inner loop dynamically generates
+ 021   and selects the strongest one from a variety of jailbreakers.       introduces new safety and alignment risks[11, 27]. Unlike                                               036
+ 022   Extensive experiments on LLaVA-1.5-13B, MiniGPT-4, and              pure language models, the inclusion of visual input chan-                                               037
+ 023   Qwen3-VL show that SafeLogo markedly lowers jailbreak               nels provides additional opportunities for adversarial ma-                                              038
+ 024   ASR on MM-SafetyBench, VLGuard, and FigStep, while                  nipulation, making VLMs increasingly susceptible to jail-                                               039
+ 025   preserving benign performance on MM-Vet and MME.                    break attacks[10], maliciously crafted prompts that exploit                                             040
+                                                                           vulnerabilities to override safety constraints and elicit harm-                                         041
+                                                                           ful or policy-violating outputs.                                                                        042
+ 026   1. Introduction
+ 027   Recent years have witnessed the rapid advancement of                Threat model. Generally, a jailbreak refers to a crafted                                                043
+ 028   Vision-Language Models (VLMs) such as LLaVA[9],                     textual or multimodal input designed to deceive the safety                                              044
+ 029   MiniGPT-4[26], and Qwen-VL[16], which demonstrate im-               alignment of a model and induce undesirable behaviors,                                                  045
+ 030   pressive capabilities across multimodal tasks including vi-         such as generating explicit, biased, or illegal content, as                                             046
+ 031   sual question answering, image captioning, and embodied             shown in Figure 1 (a). Recent studies have revealed a wide                                              047
+ 032   reasoning[1, 15, 21]. By integrating visual and textual un-         variety of jailbreak techniques, differing in their optimiza-                                           048
+ 033   derstanding within a unified framework, VLMs have sig-              tion strategies, attack targets, and adaptivity [7, 13, 19].                                            049
+ 034   nificantly extended the frontier of general-purpose intelli-        For instance, PAP (Persuasive Adversarial Prompt)[22] ap-                                               050
+ 035   gence. However, this powerful cross-modal integration also          plies 40 persuasion techniques summed up from decades                                                   051
+
+
+                                                                       1
+REDACTED
+
+
+ 052   of social science research to automatically rewrite ordinary            shield that generalizes across diverse jailbreaks without     098
+ 053   harmful queries into humanized persuasive prompts; PAIR                 modifying the backbone VLM.                                   099
+ 054   (Prompt Automatic Iterative Refinement)[3] employs an at-            2. We reformulate visual defense as a bi-level min–max           100
+ 055   tacker LLM to iteratively refine prompts based on feed-                 game, where a dynamic inner loop selects and optimizes        101
+ 056   back; and GCG (Greedy Coordinate Gradient)[28] lever-                   against the strongest adaptive jailbreak, improving the       102
+ 057   ages gradient-based search to find optimal adversarial suf-             generalization.                                               103
+ 058   fixes. This diversity and adaptability of jailbreakers under-        3. Through extensive experimentation, we demonstrate that        104
+ 059   score the urgent need for robust and generalizable defense              SafeLogo significantly reduces jailbreak success rates        105
+ 060   mechanisms that can withstand unseen or adaptive attacks.               while maintaining normal performance, thereby validat-        106
+                                                                               ing its effectiveness and practical applicability.            107
+
+ 061   Observation. A common defense strategy is fine-tuning
+ 062   VLMs to refuse malicious queries, such as Reinforcement              2. Related works                                                 108
+
+ 063   Learning from Human Feedback (RLHF)[23], but this ap-                2.1. Jailbreak Attacks on VLMs                                   109
+ 064   proach incurs prohibitive computational costs for large-
+ 065   scale models and often compromises their general capa-               Jailbreak attacks against VLMs aim to subvert their safety       110
+ 066   bilities. Alternatively, visual or textual defense prompts,          alignment by constructing malicious inputs that exploit vul-     111
+ 067   which additional cues that guide the model toward safe               nerabilities in either textual or visual modality processing.    112
+ 068   behavior, have recently emerged as lightweight solutions.            These attacks can be broadly categorized into two classes        113
+ 069   Yet, these methods typically rely on strong priors or ex-            according to the primary modality being manipulated. Jail-       114
+ 070   tensive prompt engineering, leading to reduced image real-           breaking VLMs via Text attacks relies exclusively on             115
+ 071   ism or degraded user experience when excessive perturba-             adversarial textual prompts to bypass safety mechanisms.         116
+ 072   tions are introduced (Figure 1 (b) and (c)). More critically,        Representative methods include PAIR [3], PAP [22], and           117
+ 073   their protection scope is often narrow, offering limited re-         GCG [28], prompt injection[2, 25], Base64 coding[18]. Al-        118
+ 074   silience against adaptive or cross-modal jailbreak attacks.          though such text-only attacks have demonstrated effective-       119
+ 075   This raises a key insight:                                           ness under certain conditions, their limitations are increas-    120
+                                                                            ingly apparent. Modern VLMs often incorporate robust tex-        121
+                                                                            tual safety filters, which significantly constrain the evasion   122
+           Insight: Can a visually subtle logo be optimized
+                                                                            space and reduce the generalizability of purely text-based       123
+           into a universal and robust “shields” against di-
+                                                                            jailbreaks. In contrast, attacks through the visual channel      124
+           verse jailbreaks without sacrificing image usability?
+                                                                            leverage the high-dimensional and continuous nature of the       125
+ 076
+                                                                            image space, where adversarial examples are both common          126
+ 077      To address this, we propose SafeLogo, a novel defense             and relatively straightforward to generate. Such methods         127
+ 078   framework that repurposes a small, logo-sized visual re-             use carefully perturbed or semantically manipulated images       128
+ 079   gion into a universal jailbreak shield through micro-regional        to mislead the model into generating harmful content. No-        129
+ 080   adversarial training (AT) [14]. Instead of modifying the             table techniques include Visual Adversarial Examples [13]        130
+ 081   entire image or retraining the backbone model, SafeLogo              and Figstep [5]. Given the distinct nature of vulnerabilities    131
+ 082   learns a compact visual perturbation constrained within an           exposed by textual and visual jailbreaking strategies, it is     132
+ 083   extremely small pixel area (≤ 2% coverage), which can                imperative to develop multimodal defense mechanisms tai-         133
+ 084   be seamlessly embedded into images like a watermark or               lored to the unique architecture of VLMs.                        134
+ 085   brand logo (Figure 1 (d)). By formulating defense learn-
+ 086   ing as a min–max optimization between adaptive attack-               2.2. Defenses for VLMs                                           135
+ 087   ers and localized defenders, SafeLogo dynamically adapts
+                                                                            Securing VLMs against jailbreak attacks is critical for their    136
+ 088   to the strongest jailbreak strategy in each iteration, achiev-
+                                                                            safe real-world deployment. Existing defense strategies can      137
+ 089   ing strong robustness while preserving both visual fidelity
+                                                                            be broadly categorized into two paradigms: fine-tuning-          138
+ 090   and semantic consistency. Extensive experiments demon-
+                                                                            based approaches and plug-and-play methods. Fine-                139
+ 091   strate that SafeLogo significantly reduces jailbreak success
+                                                                            tuning-based defenses, such as RLHF [23] and Supervised          140
+ 092   rates across diverse attack types and benchmarks, while
+                                                                            Fine-Tuning (SFT) [8], reinforce safety alignment by fur-        141
+ 093   maintaining benign performance comparable to unprotected
+                                                                            ther training the model on carefully annotated data. How-        142
+ 094   VLMs.
+                                                                            ever, these methods are often costly, data-dependent, and        143
+                                                                            may compromise the model’s general capabilities. In con-         144
+ 095   Contributions. The contributions of our paper are:                   trast, plug-and-play defenses aim to mitigate risks without      145
+ 096   1. We are the first to introduce AT for localized visual             modifying the base model. For instance, MLLM-Protector           146
+ 097      prompts, turning a tiny logo patch into a universal safety        [12] employs a lightweight harm detector and a detoxifier        147
+
+
+                                                                        2
+REDACTED
+
+
+
+                                                ......
+                                                                                                                   Response：
+                        Diverse Jailbreaks                                         Safe
+                                                                                 Instruction                I am sorry.
+
+
+                     SafeLogo                                               Target VLMs                          Safe Response
+
+
+                       Outer Loop: Localized Defense Optimization                 Inner Loop: Jailbreak Generation and Selection
+
+
+
+
+                                                                                                                          Visual Input
+                                                                              LLM-as-Judge            VLM
+
+
+
+
+                                                                                                                       ......
+                                           Safe
+                                         Instruction                                              GCG PAIR PAP ......
+
+                      VLM with Fixed Safe Instruction                                               Jailbreak Candidates
+
+
+
+
+       Figure 2. Overview of SafeLogo. SafeLogo employs a min-max optimization where the inner loop generates and selects the strongest
+       jailbreaks, while the outer loop updates a tiny logo-sized patch as a universal, visually subtle shield for VLMs.
+
+
+ 148   to rewrite harmful responses, yet introduces additional in-           where Tjail (tharm ) denotes the set of jailbreak prompts de-   170
+ 149   ference overhead. ECSO [6] converts unsafe images into                rived from a harmful instruction tharm , and Lsafety measures   171
+ 150   textual descriptions to leverage the safety mechanisms of             the model’s tendency to produce unsafe responses.               172
+ 151   pre-aligned LLMs, but its effectiveness depends heavily on
+ 152   the LLM’s own judgment. AdaShield [17] prepends defense               3.2. Adversarial Training                                       173
+ 153   prompts to user inputs, yet it is tailored primarily to struc-        Traditional adversarial training is widely used to train        174
+ 154   tured jailbreak attacks. More recently, DAVSP [24] inserts a          robust neural networks against adversarial perturbations.       175
+ 155   trainable padding region around input images and performs             Given a model fθ : X → Y parameterized by θ, where              176
+ 156   supervised optimization in activation space. Nevertheless,            X is the input space and Y is the output space, AT formu-       177
+ 157   it exhibits limited cross-model generalization, suboptimal            lates model optimization as a min–max problem between an        178
+ 158   utility preservation on benign inputs, and inadequate cover-          adversary and a defender:                                       179
+ 159   age across diverse adversarial attack types.
+                                                                                                                            
+                                                                                                                           
+ 160   3. Preliminaries                                                               min E(x,y)∼D max L fθ (x + δ), y ,            (2)      180
+                                                                                          θ            ∥δ∥p ≤ϵ
+
+ 161   We give the list of notations in Appendix A.1.
+                                                                             where δ denotes the adversarial perturbation bounded by         181
+ 162   3.1. Jailbreak Attacks                                                an Lp -norm ball of radius ϵ, and L is the task loss func-      182
+                                                                             tion (e.g., cross-entropy). The inner maximization seeks the    183
+ 163   In the context of VLMs, we consider a multimodal model                worst-case perturbation that maximizes the loss, while the      184
+ 164   fθ : X × T → Y, where X ⊆ [0, 1]H×W ×C denotes the                    outer minimization updates model parameters to minimize         185
+ 165   visual input space, T the textual instruction space, and Y            this risk. The trained model is thus encouraged to produce      186
+ 166   the response space. A jailbreak attack aims to find a textual         stable predictions under malicious perturbations, forming       187
+ 167   input tjail that induces harmful or policy-violating outputs,         the foundation for robustness-oriented optimization.            188
+ 168   bypassing the model’s safety alignment:                                  This inspires us to leverage a similar adversarial prin-     189
+                                                                            ciple to train a micro-regional defense logo that enhances      190
+ 169                tjail = arg max Lsafety fθ (x, t) ,          (1)         safety robustness without altering the VLMs.                    191
+                             t∈Tjail (tharm )
+
+
+
+                                                                        3
+REDACTED
+
+
+
+       Algorithm 1 Micro-regional Adversarial Training Framework for SafeLogo
+       Require: VLM fθ , datasets Dharm , Dbenign , jailbreak generators J , fixed mask M , ϵdef , αout , λ
+       Ensure: Localized defense parameters ϕ
+        1: Initialize δϕ with ∥δϕ ∥∞ ≤ ϵdef
+        2: for each batch (x, tharm , tbenign ) do
+        3:    (Inner loop) Generate jailbreak candidates: Tpool = {Ji (x, tharm , fθ , gϕ )}Ji ∈J
+        4:    Select strongest jailbreak: t∗jail = arg maxt∈Tpool JLLM (fθ (gϕ (x), t))                   ▷ Evaluate harmfulness via LLM-as-Judge
+        5:    (Outer loop) Compute defense losses:                                                             ▷ Optimize under strongest jailbreak
+        6:        Lsafety = − log Prefuse (gϕ (x), t∗jail )                                                 ▷ Encourage refusal on harmful prompts
+        7:        Lsemantic = ∥fθ (gϕ (xbenign ), tbenign ) − fθ (xbenign , tbenign )∥22                              ▷ Preserve benign consistency
+        8:        Ldefense = (1 − λ)Lsafety + λLsemantic                                 
+        9:    Update perturbation: δϕ ← Π∥δϕ ∥∞ ≤ϵdef δϕ − αout ∇δϕ Ldefense                                      ▷ Gradient update with projection
+       10: end for
+       11: return optimized defense ϕ                                                                                       ▷ Output final SafeLogo
+
+
+ 192   4. Methodology                                                                      Safety loss Lsafety encourages to resist the strongest jail-         222
+                                                                                        break prompt found in the inner maximization stage:                     223
+ 193   To establish a lightweight yet effective visual safety mech-
+                                                                                          Lsafety = E(x,tharm )∼Dharm − log Prefuse gϕ (x), t∗jail , (6)
+                                                                                                                                                 
+ 194   anism for VLMs, we formalize the defense problem un-                                                                                                     224
+ 195   derlying SafeLogo. Instead of modifying model parame-
+ 196   ters or introducing global perturbations, we seek to learn a                     where t∗jail denotes the most effective jailbreak prompt gen-           225
+
+ 197   compact micro-regional defense function that operates lo-                        erated for the harmful instruction tharm , and Prefuse (·) mea-         226
+
+ 198   cally on images, providing strong resistance to jailbreak at-                    sures the model’s probability of producing a safe, refusal-             227
+
+ 199   tacks while preserving visual fidelity and benign utility. An                    aligned response. This term explicitly drives the defense to            228
+
+ 200   overview of the main steps is shown in Figure 2.                                 maximize safety compliance under adversarial pressure.                  229
+                                                                                           Moreover, we introduce a semantic preservation loss                  230
+ 201   4.1. Problem Formalization                                                       Lsemantic to remain consistent with the original response on            231
+                                                                                        benign inputs:                                                          232
+ 202   Formally, we define a parameterized defense function gϕ :
+                                                                                           Lsemantic = E(x,t)∼Dbenign ∥fθ (gϕ (x), t) − fθ (x, t)∥22 .
+                                                                                                                                                   
+ 203   X → X that injects localized perturbations into the image:
+                                                                                                                                                      (7)       233
+ 204                         gϕ (x) = x + M ⊙ δϕ ,                            (3)       This regularization preserves the model’s normal reasoning              234
+                                                                                        and perception ability while allowing the localized defense             235
+ 205   where δϕ ∈ [−ϵdef , ϵdef ]H×W ×C is a learnable defense per-                     logo to focus purely on safety alignment.                               236
+ 206   turbation bounded by a predefined magnitude, and M ∈
+ 207   {0, 1}H×W ×C is a sparse binary mask indicating the ac-                          4.2. Micro-regional Adversarial Training                                237
+ 208   tive perturbation region. Thus, the overall optimization of                      Building on the formulation, we adopt a micro-regional AT               238
+ 209   SafeLogo can be formulated as a min–max problem:                                 framework that models the interaction between a dynamic                 239
+                                                                                        set of jailbreak attackers and a defense logo. The training             240
+ 210                 min         max               Ldefense (ϕ, x, tjail ).   (4)
+                      ϕ    tjail ∈Tjail (tharm )                                        process follows a bi-level optimization scheme where the                241
+                                                                                        inner loop searches for the strongest jailbreak prompt, and             242
+ 211   The inner maximization finds the most aggressive jailbreak                       the outer loop updates the defense logo to counteract such              243
+ 212   under the current defense, while the outer minimization up-                      adaptive adversaries.                                                   244
+ 213   dates the defense parameters ϕ to neutralize it. This bi-level
+                                                                                        4.2.1. Inner Loop: Jailbreak Generation and Selection                   245
+ 214   min–max formulation captures the adversarial dynamics be-
+                                                                                                                                  (t)
+ 215   tween an evolving attacker (jailbreak generator) and the lo-                     Given current defense parameters ϕ , the inner loop gen-                246
+ 216   calized defender (SafeLogo).                                                     erates a pool of adversarial jailbreak prompts and selects the          247
+                                                                                        most harmful one for training. Let J = {J1 , J2 , . . . , Jn }          248
+                                                                                        denote the set of jailbreak generation methods (e.g., PAP,              249
+ 217   Defense Loss. The overall defense loss Ldefense is defined
+                                                                                        PAIR, GCG, AutoDAN). For each harmful instruction tharm                 250
+ 218   as a weighted combination of two components:
+                                                                                        and image x, we construct a candidate jailbreak pool as:                251
+
+ 219               Ldefense = (1 − λ) Lsafety + λ Lsemantic ,                 (5)          Tpool (x, tharm ) = {Ji (x, tharm , fθ , gϕ(t) ) | Ji ∈ J }.   (8)   252
+
+ 220   where the coefficient λ ∈ [0, 1] balances the trade-off be-                          Among these candidates, the strongest jailbreak prompt              253
+ 221   tween safety robustness and benign utility.                                      is selected based on the safety judgment score evaluated by             254
+
+
+                                                                                    4
+REDACTED
+
+
+ 255   a large language model (LLM) acting as a safety judge:                   A projection step ensures that the learned perturbation re-             302
+                                                                                mains bounded by ∥δϕ ∥∞ ≤ ϵdef . The detailed descriptions              303
+              t∗jail = arg max JLLM fθ (gϕ(t) (x), tjail ) , (9)
+                                                          
+ 256                                                                            of our algorithm is presented in Appendix A.2.                          304
+                     tjail ∈Tpool (x,tharm )
+
+
+ 257   where JLLM (·) denotes the safety evaluation function that
+ 258   measures the likelihood of a response being unsafe or
+ 259   policy-violating, as judged by a large language model in
+ 260   context. In practice, we adopt an LLM-as-Judge method,
+ 261   where the judge model assigns a scalar safety score to each
+ 262   response, indicating how harmful or disallowed the content
+ 263   is. The jailbreak with the highest judged harmfulness is se-
+ 264   lected as t∗jail for the subsequent outer-loop optimization.
+ 265   4.2.2. Outer Loop: Localized Defense Optimization
+ 266   After obtaining the strongest jailbreak t∗jail from the inner
+ 267   loop, the outer loop optimizes the localized defense pertur-
+ 268   bation to minimize the defense loss under the most adver-
+ 269   sarial condition:
+                                                                     
+       ϕ(t+1) = Π∥δϕ ∥∞ ≤ϵdef ϕ(t) − αout ∇ϕ Ldefense ϕ(t) , x, t∗jail ,
+ 270                                                                 (10)
+ 271   where αout denotes the learning rate, and Π∥δϕ ∥∞ ≤ϵdef
+ 272   projects the updated perturbation back into the valid pertur-
+ 273   bation space constrained by ∥δϕ ∥∞ ≤ ϵdef . This constraint
+ 274   limits the maximum pixel modification and ensures visual
+ 275   imperceptibility.
+ 276       The perturbation is applied to a fixed spatial region spec-
+ 277   ified by a binary mask M . The coverage constraint ∥M ∥0 =
+ 278   ρ·H ·W ·C, where the coverage ratio ρ (typically ρ = 0.02)               Figure 3. Illustration of SafeLogo’s defense mechanism. Com-
+ 279   controls the proportion of perturbed pixels. By keeping M                bining safety instructions with SafeLogo results in a significantly
+ 280   fixed, the defense remains spatially consistent and transfer-            stronger defense, providing reliable protection against jailbreak at-
+ 281   able across images, focusing optimization solely on the lo-              tacks without compromising the safety of the model’s responses.
+ 282   calized perturbations, which is the SafeLogo. Such a small
+ 283   localized region alone cannot produce sufficient safety ef-
+ 284   fects. Therefore, our SafeLogo is trained jointly with stan-             5. Experiments                                                          305
+
+ 285   dard safety-aligned instructions to activate and amplify the             We conduct extensive experiments to evaluate SafeLogo’s                 306
+ 286   intrinsic safety alignments.                                             effectiveness against diverse jailbreak attacks and its impact          307
+                                                                                on benign performance. Evaluations cover multiple bench-                308
+ 287   4.3. Unified Training Algorithm
+                                                                                marks across various VLMs. We further analyze cross-                    309
+ 288   Our framework optimizes a compact, spatially constrained                 model transferability, ablation on key hyperparameters, and             310
+ 289   defense logo, allowing SafeLogo to achieve strong gener-                 the trade-off between robustness and visual fidelity. De-               311
+ 290   alization across unseen jailbreak strategies while retaining             tailed experiment settings are given in Appendix B.                     312
+ 291   high visual quality and slight impact on benign tasks. An
+ 292   illustrative example is presented in Figure 3.                           5.1. Experimental Setting                                               313
+
+ 293       Algorithm 1 outlines the overall training procedure of               Datasets. We use MM-SafetyBench[11], MM-Vet[20],                        314
+ 294   our micro-regional AT framework. For each iteration, the                 VLGuard[27] and MME[4] in our experiments. The splits                   315
+ 295   inner loop dynamically generates and selects the most ef-                are defined as follows: 1) Training. We use two data                    316
+ 296   fective jailbreak prompt across multiple attack families us-             sources for training. For defense training, we select 600               317
+ 297   ing an LLM-as-Judge evaluator, ensuring that the defense is              samples from MM-SafetyBench that the baseline model ini-                318
+ 298   continuously optimized against adaptive adversaries. The                 tially failed to recognize as harmful. For each image, we               319
+ 299   outer loop then updates the localized perturbation δϕ within             generate three textual attacks (PAIR, GCG, PAP) and dy-                 320
+ 300   a fixed mask region, minimizing the composite defense loss               namically choose the strongest one that yields the most                 321
+ 301   that balances safety robustness and semantic preservation.               harmful response; the resulting (image, strongest-attack)               322
+
+
+                                                                            5
+REDACTED
+
+
+        Table 1. ASR under Different Safety Benchmarks. Bold and underlined values denote best and second-best performance, respectively.
+
+                                                                          MM-SafetyBench
+                                                                                                                              VLGuard
+               Model           Defense Method           SD+TYPO                  TYPO                    SD
+                                                PAIR     GCG      PAP     PAIR   GCG      PAP    PAIR   GCG    PAP    PAIR     GCG      PAP
+                                 No Defense     13.3%    17.1%    16.9%   9.8%   14.2%   11.9%   5.9%   8.1%   5.7%   33.3%    32.4%    41.0%
+                                   DAVSP         0.1%     1.3%     0.2%   0.2%    1.0%    0.0%   0.5%   1.3%   0.5%   17.1%    17.1%     9.5%
+                                  MLLMP         9.5%     12.4%    10.5%   5.6%    7.7%    6.6%   5.2%   7.1%   4.5%   25.7%    27.6%    35.2%
+           LLaVA-1.5-13B
+                                   ECSO          3.7%     9.4%     7.9%   2.7%    4.1%    3.5%   2.2%   5.4%   3.2%   23.8%    25.7%    26.7%
+                                 Adashield       1.4%     7.5%     2.5%   0.0%    2.4%    0.7%   0.5%   2.8%   0.9%    6.7%    15.2%    13.3%
+                                  SafeLogo       0.9%     4.2%     0.4%   0.3%    1.8%    0.1%   1.0%   2.4%   0.4%    2.9%    11.4%     1.9%
+                                 No Defense     6.7%     6.3%     4.6%    4.4%   3.8%    3.2%    4.2%   3.7%   1.9%   10.5%    15.2%    13.3%
+                                   DAVSP        0.6%     0.0%     0.0%    0.7%   0.0%    0.0%    0.3%   0.0%   0.0%    1.0%     0.0%     0.0%
+                                  MLLMP         7.0%     5.9%     5.0%    4.7%   3.2%    3.9%    4.2%   3.5%   1.8%    8.6%    11.4%    13.3%
+        Qwen3-VL-8B-Instruct
+                                   ECSO         3.0%     7.4%     2.6%    1.6%   2.7%    1.8%    1.9%   3.4%   1.4%   10.5%    14.3%    15.2%
+                                 Adashield      2.5%     1.6%     1.0%    1.5%   0.6%    0.8%    3.2%   0.7%   1.2%    8.6%     2.9%     3.8%
+                                  SafeLogo      0.5%     0.0%     0.1%    0.6%   0.0%    0.1%    0.3%   0.0%   0.0%    1.0%     0.0%     0.0%
+
+
+
+ 323   pairs form the defense training set. For benign training, 100          size of 3 and a learning rate of 1/255. A fixed safety instruc-   355
+ 324   samples randomly sampled from MM-Vet. 2) Evaluation.                   tion is employed during both training and evaluation to en-       356
+ 325   We evaluate both defense and benign generalization under               sure consistent instruction behavior. During the training of      357
+ 326   in-distribution (ID) and out-of-distribution (OOD) settings.           the SafeLogo, the weight, coverage ratio, and perturbation        358
+ 327   For defense evaluation, the ID set consists of the remain-             range are treated as tunable hyperparameters and adjusted         359
+ 328   ing MM-SafetyBench samples (excluding the 600 training                 according to experimental requirements.                           360
+ 329   ones), including the SD, TYPO, and SD+TYPO subsets;
+ 330   the OOD set comes from the most harmful samples in VL-                 5.2. Evaluation of Defense Effectiveness                          361
+ 331   Guard. For benign evaluation, the ID set uses the remaining            Table 1 summarizes the ASR of different defense meth-             362
+ 332   MM-Vet samples (excluding the 100 training ones), while                ods on the ID MM-SafetyBench and the OOD VLGuard                  363
+ 333   the OOD set includes all samples from MME.                             benchmarks. Across all settings, baseline methods such            364
+                                                                              as MLLM-Protector (MLLMP), ECSO, and AdaShield re-                365
+ 334   Evaluation Metrics. We evaluate performance using two                  duce ASR to a certain extent but remain vulnerable under          366
+ 335   metrics: 1) Attack Success Rate (ASR), which is com-                   strong attacks. DAVSP achieves stronger robustness by             367
+ 336   puted using DeepSeek-V3 to quantify the model’s robust-                injecting unrestricted perturbations along the entire image       368
+ 337   ness against harmful prompts; 2) Benign Score, which is                border, which substantially lowers ASR but at the cost of         369
+ 338   assessed following the benchmark specifications of each re-            heavy global modification. In contrast, SafeLogo attains          370
+ 339   spective dataset to evaluate the model’s performance on be-            comparable or even superior robustness while constrain-           371
+ 340   nign tasks.                                                            ing the perturbation magnitude to 64/255 within only 2%           372
+                                                                              logo coverage, showing that a small, localized modifica-          373
+                                                                              tion suffices to realize a similar defensive effect. Specifi-     374
+ 341   Baselines. We compare our method against several state-                cally, on MM-SafetyBench, SafeLogo significantly reduces          375
+ 342   of-the-art baselines for multimodal model safety, includ-              the ASR of LLaVA-1.5-13B and Qwen3-VL-8B-Instruct,                376
+ 343   ing DAVSP, a visual safety alignment approach that em-                 closely matching or outperforming DAVSP.                          377
+ 344   ploys trainable visual safety prompts and deep activation-                 On the OOD benchmark VLGuard, SafeLogo main-                  378
+ 345   space alignment [24]; AdaShield, a fine-tuning-free defense            tains strong generalization for LLaVA and Qwen3-VL-8B-            379
+ 346   strategy using adaptive shield prompts to resist structure-            Instruct, whereas the ASR of other baselines increases no-        380
+ 347   based jailbreak attacks [17]; ECSO, a training-free pro-               tably under OOD attacks. These results demonstrate that           381
+ 348   tection method that activates intrinsic LLM safety mecha-              our localized perturbation strategy achieves high defense ef-     382
+ 349   nisms by converting unsafe images to text [6]; and MLLM-               ficiency, strong ID robustness, and effective OOD general-        383
+ 350   Protector, a plug-and-play framework with a harm detector              ization with minimal visual disturbance.                          384
+ 351   and detoxifier to mitigate malicious visual input risks [12].
+                                                                              5.3. Evaluation of Benign Utility                                 385
+
+ 352   Implementation Details. We conduct all experiments us-                 Tables 2 and 3 report the benign performance under dif-           386
+ 353   ing LLaVA-1.5-13B and Qwen3-VL-8B-Instruct as the base                 ferent defenses. Overall, SafeLogo maintains higher be-           387
+ 354   models. Each model is trained for 5,000 steps with a batch             nign utility compared with baselines that achieve similar         388
+
+
+                                                                          6
+REDACTED
+
+
+ 389   defense strength. Across MM-Vet and MME, LLaVA-                            we observe strong defense performance on VLGuard, with                  407
+ 390   1.5-13B with SafeLogo exhibits almost unchanged perfor-                    ASR reduced to 0–1.0% across all attack types. This                     408
+ 391   mance on the in-distribution MM-Vet benchmark, with to-                    demonstrates that the localized perturbation not only en-               409
+ 392   tal scores comparable to the undefended model. On the                      hances defense for the source model, but also transfers ef-             410
+ 393   OOD MME benchmark, it shows a moderate performance                         fectively to a substantially different architecture, highlight-         411
+ 394   drop but still outperforms baselines with comparable ro-                   ing the robustness and model-agnostic nature of SafeLogo.               412
+ 395   bustness. Qwen3-VL-8B-Instruct shows a small degra-                        In contrast, ECSO yields higher ASR on Gemini-2.5-Flash-                413
+ 396   dation on MM-Vet, mainly due to its sensitivity to fine-                   Image than even the undefended baseline, since its defense              414
+ 397   grained capabilities such as OCR and mathematical rea-                     relies on a specific LLaVA-aligned LLM that does not gen-               415
+ 398   soning, yet its total scores under SafeLogo remain higher                  eralize well to an unseen model.                                        416
+ 399   than the baselines with similar defense effectiveness. On
+ 400   the OOD MME benchmark, Qwen3-VL-8B-Instruct’s per-                             Table 4. ASR on VLGuard for Gemini-2.5-Flash-Image.
+ 401   formance is largely preserved, indicating strong robustness
+                                                                                                                                        VLGuard
+ 402   of higher-level perception and cognition to our SafeLogo.                          Model                 Method
+                                                                                                                                 PAIR    GCG      PAP
+                Table 2. Benign score on MM-Vet benchmark.                                                     No Defense        2.9%     4.8%     1.0%
+                                                                                                                 DAVSP           1.0%     0.0%     0.0%
+                                                                                                                MLLMP            2.9%     2.9%     1.0%
+                                             MM-Vet
+           Model                                                                   Gemini-2.5-Flash-Image        ECSO            3.8%    14.3%    10.5%
+                       Rec     OCR    Know    Spat    Gen    Math     Total                                    Adashield         1.9%    1.0%     0.0%
+                                                                                                            Safety Instruction   1.9%     1.0%     0.0%
+                                  LLaVA-1.5-13B
+                                                                                                                SafeLogo         1.0%     0.0%     0.0%
+        No Defense     41.1    32.8   28.5    39.1    33.6   7.1      39.2
+          DAVSP        39.3    30.9   24.3    41.1    30.2   20.7     38.0
+         MLLMP         40.5    31.9   28.5    37.8    32.9   7.1      38.6
+          ECSO         40.7    30.9   29.8    37.6    33.6   7.1      38.6        5.5. Ablation Studies                                                   417
+        Adashield      36.5    25.9   19.6    34.4    27.4    0       32.8
+         SafeLogo      41.7    33.6   25.4    39.1    32.1   13.6     39.2        To investigate the impact of key parameters on our defense              418
+                                                                                  framework, we conduct ablation studies with a fixed train-              419
+                               Qwen3-VL-8B-Instruct
+                                                                                  ing setup: all experiments are performed on LLaVA-1.5-                  420
+        No Defense     63.4    66.0   55.2    68.7    56.9   44.3     65.8
+          DAVSP        37.6    41.2   25.7    38.7    15.0   30.7     41.4
+                                                                                  13B for 10 epochs, using MM-SafetyBench (for defense ef-                421
+         MLLMP         65.0    63.6   54.6    67.3    57.6   32.9     65.3        fectiveness) and MM-Vet (for benign utility) as evaluation              422
+          ECSO         64.5    64.5   57.2    67.3    60.5   36.4     65.3        benchmarks. The following sections analyze the effects of               423
+        Adashield      45.4    56.4   32.2    50.9    26.7   43.6     50.8        three core parameters separately under this consistent ex-              424
+         SafeLogo      46.0    58.0   38.3    54.8    24.0   46.9     53.3
+                                                                                  perimental premise.                                                     425
+
+
+
+        Table 3. Performance Comparison on the MME Benchmarks.                    Effect of Safety Instruction and Safety Logo. Table 5                   426
+                                                                                  demonstrates that SafeLogo alone, with its small localized              427
+                                                          MME                     region, does not provide sufficient defense. However, when              428
+               Model              Method
+                                             Perception   Cognition   Total       combined with standard safety-aligned instructions, SafeL-              429
+
+                                No Defense     1531          289      1820
+                                                                                  ogo effectively triggers and amplifies the model’s intrinsic            430
+                                  DAVSP        1143          254      1397        defense mechanisms. Rather than relying solely on SafeL-                431
+           LLaVA-1.5-13B
+                                 MLLMP         1531          289      1820        ogo for robust defense, this approach leverages the model’s             432
+                                  ECSO         1521          288      1809
+                                Adashield      1220          240      1460
+                                                                                  built-in safety capabilities, resulting in enhanced protection          433
+                                 SafeLogo      1255          298      1553        with minimal impact on benign performance.                              434
+                                No Defense     1748          640      2388
+                                 DAVSP         1646          651      2297        Effect of Defense and Benign Weights. Table 6 reports                   435
+                                 MLLMP         1748          640      2388
+        Qwen3-VL-8B-Instruct                                                      the performance under different defense weights. Overall,               436
+                                  ECSO         1747          632      2379
+                                Adashield      1567          655      2222        moderate defense weights yield a better trade-off between               437
+                                 SafeLogo      1671          643      2314        safety and utility, whereas extreme weights cause degrada-              438
+                                                                                  tion in either robustness or benign performance. Increas-               439
+                                                                                  ing the defense weight from 50% to 98% consistently im-                 440
+ 403   5.4. Cross-Model Transfer                                                  proves defense effectiveness but gradually reduces benign               441
+ 404   We further evaluate the cross-model transferability of                     utility. Interestingly, an extremely high defense weight of             442
+ 405   SafeLogo, shown in Table 4. When we directly apply                         99% slightly harms defense robustness (likely due to over-              443
+ 406   the LLaVA-trained SafeLogo to Gemini-2.5-Flash-Image,                      fitting to the defense objective and poor generalization to             444
+
+
+                                                                              7
+REDACTED
+
+
+                       Table 5. Ablation results on MM-SafetyBench with Safety Instruction, SafeLogo, and their combination.
+
+                                                                             MM-SafetyBench (ASR ↓)
+                            Defense Setting                SD+TYPO                       TYPO                        SD
+                                                   PAIR     GCG       PAP     PAIR        GCG      PAP     PAIR     GCG      PAP
+                              No Defense           13.3%    17.1%    16.9%       9.8%    14.2%    11.9%    5.9%     8.1%     5.7%
+                         Safety Instruction (SI)    5.1%    12.8%     5.8%       0.7%     7.5%     1.9%    1.5%     3.4%     1.5%
+                               SafeLogo            12.5%    18.7%    17.8%       9.3%    15.9%    12.6%    6.8%     9.0%     5.8%
+                            SI + SafeLogo          1.0%     3.1%     0.4%        0.0%    1.2%     0.1%     0.6%     2.8%     0.8%
+
+
+
+ 445   unseen attack patterns) while benign utility recovers. This                a better trade-off between security and utility, while ex-        467
+ 446   suggests that a defense-dominant objective can lead the                    treme or mismatched perturbation intensities lead to subop-       468
+ 447   model to focus on a small set of attack-associated features                timal performance. The low-intensity perturbation (64/255)        469
+ 448   and avoid over-modifying benign-related features, thus pre-                achieves favorable defense effectiveness alongside excel-         470
+ 449   serving overall image semantics.                                           lent benign utility. While the medium-high intensity pertur-      471
+                                                                                  bation (128/255) delivers marginally better defense perfor-       472
+            Table 6. Performance under different defense weights.                 mance, it comes at the cost of compromised benign utility.        473
+                                                                                  Thus, the low-intensity perturbation (64/255) emerges as a        474
+           Defense Weight      MM-SafetyBench ↓            MM-Vet ↑               superior trade-off choice, as it not only ensures robust at-      475
+                 50%                     31%                 39.9                 tack resistance but also maximizes the preservation of the        476
+                 95%                     31%                 39.2                 model’s capability in handling benign tasks, aligning better      477
+                 98%                      6%                 35.3                 with the comprehensive requirements of practical applica-         478
+                 99%                      8%                 39.1                 tions. Meanwhile, the medium-low intensity perturbation           479
+                                                                                  (96/255)—falling between 64/255 and 128/255—ends up               480
+                                                                                  in a ”lose-lose” situation, with both its defense effective-      481
+                                                                                  ness and benign utility inferior to the aforementioned two        482
+ 450   Effect of Coverage Rate. Table 7 analyzes the impact
+                                                                                  ranges. In the case of the full-intensity perturbation, exces-    483
+ 451   of coverage rates on model performance under the same
+                                                                                  sive disturbance leads to suboptimal defense performance          484
+ 452   premise. Overall, moderate coverage strikes an optimal bal-
+                                                                                  due to over-optimization for security objectives.                 485
+ 453   ance between security and utility, while both excessively
+ 454   high and low coverage rates compromise either defense or                         Table 8. Performance under different perturbation ranges.
+ 455   benign performance. Moderate coverage (9%) delivers the
+ 456   optimal defense effectiveness while maintaining favorable                        Perturbation Range     MM-SafetyBench ↓       MM-Vet ↑
+ 457   benign utility. In contrast, higher coverage (16%) leads to
+                                                                                               64/255                   8%               39.1
+ 458   reduced defense performance and compromised benign util-                                96/255                  15%               36.5
+ 459   ity due to excessively concentrated perturbation—its over-                             128/255                  7%                37.2
+ 460   all performance is inferior to the moderate coverage setting.                          255/255                  22%               39.0
+ 461   Meanwhile, low coverage rates (4%, 1%) result in impaired
+ 462   defense effectiveness as sparse perturbation fails to effec-
+ 463   tively resist attacks.                                                     6. Conclusions                                                    486
+
+             Table 7. Performance under different coverage rates.                 This work introduces SafeLogo, a lightweight and effective        487
+                                                                                  defense framework that transforms a tiny logo-sized region        488
+                                                                                  into a universal visual shield for VLMs. Through bi-level         489
+           Coverage Rate      MM-SafetyBench ↓             MM-Vet ↑
+                                                                                  adversarial optimization, SafeLogo achieves strong robust-        490
+                1%                       29%                 39.5                 ness against diverse jailbreak attacks while preserving se-       491
+                4%                       19%                 40.0                 mantic integrity and visual quality. Our approach signifi-        492
+                9%                        5%                 38.5                 cantly reduces attack success rates across multiple bench-        493
+                16%                       8%                 37.0                 marks while maintaining the semantic integrity and visual         494
+                                                                                  quality of benign inputs. Through extensive experimenta-          495
+                                                                                  tion, we demonstrate that SafeLogo outperforms existing           496
+                                                                                  defense methods, both in terms of attack resistance and           497
+ 464   Effect of Perturbation Range. Table 8 analyzes the im-                     cross-model generalization. Furthermore, its minimal im-          498
+ 465   pact of perturbation ranges on model performance under                     pact on the model’s performance makes it a practical solu-        499
+ 466   the same premise. Overall, moderate perturbation enables                   tion for real-world applications.                                 500
+
+
+                                                                             8
+REDACTED
+
+
+ 501   References                                                               [13] Xiangyu Qi, Kaixuan Huang, Ashwinee Panda, Peter Hen-            558
+                                                                                     derson, Mengdi Wang, and Prateek Mittal. Visual adversarial      559
+ 502    [1] Peter Anderson, Xiaodong He, Chris Buehler, Damien                       examples jailbreak aligned large language models. In Pro-        560
+ 503        Teney, Mark Johnson, Stephen Gould, and Lei Zhang.                       ceedings of the AAAI conference on artificial intelligence,      561
+ 504        Bottom-up and top-down attention for image captioning and                pages 21527–21536, 2024. 1, 2                                    562
+ 505        visual question answering. In Proceedings of the IEEE con-          [14] F Tramèr, D Boneh, A Kurakin, I Goodfellow, N Papernot,         563
+ 506        ference on computer vision and pattern recognition, pages                and P McDaniel. Ensemble adversarial training: Attacks           564
+ 507        6077–6086, 2018. 1                                                       and defenses. In 6th International Conference on Learning        565
+ 508    [2] Yuntao Bai, Saurav Kadavath, Sandipan Kundu, Amanda                      Representations, ICLR 2018-Conference Track Proceedings,         566
+ 509        Askell, Jackson Kernion, Andy Jones, Anna Chen, Anna                     2018. 2                                                          567
+ 510        Goldie, Azalia Mirhoseini, Cameron McKinnon, et al. Con-            [15] Liuyi Wang, Zongtao He, Ronghao Dang, Mengjiao Shen,             568
+ 511        stitutional ai: Harmlessness from ai feedback. arXiv preprint            Chengju Liu, and Qijun Chen. Vision-and-language naviga-         569
+ 512        arXiv:2212.08073, 2022. 2                                                tion via causal learning. In Proceedings of the IEEE/CVF         570
+ 513    [3] Patrick Chao, Alexander Robey, Edgar Dobriban, Hamed                     conference on computer vision and pattern recognition,           571
+ 514        Hassani, George J Pappas, and Eric Wong. Jailbreaking                    pages 13139–13150, 2024. 1                                       572
+ 515        black box large language models in twenty queries. In               [16] Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan,        573
+ 516        2025 IEEE Conference on Secure and Trustworthy Machine                   Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin          574
+ 517        Learning (SaTML), pages 23–42. IEEE, 2025. 2                             Ge, et al. Qwen2-vl: Enhancing vision-language model’s           575
+ 518    [4] Chaoyou Fu, Peixian Chen, Yunhang Shen, Yulei Qin,                       perception of the world at any resolution. arXiv preprint        576
+ 519        Mengdan Zhang, Xu Lin, Jinrui Yang, Xiawu Zheng, Ke Li,                  arXiv:2409.12191, 2024. 1                                        577
+ 520        Xing Sun, et al. Mme: A comprehensive evaluation bench-             [17] Yu Wang, Xiaogeng Liu, Yu Li, Muhao Chen, and Chaowei            578
+ 521        mark for multimodal large language models. In The Thirty-                Xiao. Adashield: Safeguarding multimodal large lan-              579
+ 522        ninth Annual Conference on Neural Information Processing                 guage models from structure-based attack via adaptive shield     580
+ 523        Systems Datasets and Benchmarks Track, 2025. 5                           prompting. In European Conference on Computer Vision,            581
+ 524    [5] Yichen Gong, Delong Ran, Jinyuan Liu, Conglei Wang,                      pages 77–94. Springer, 2024. 3, 6                                582
+ 525        Tianshuo Cong, Anyu Wang, Sisi Duan, and Xiaoyun Wang.              [18] Alexander Wei, Nika Haghtalab, and Jacob Steinhardt. Jail-       583
+ 526        Figstep: Jailbreaking large vision-language models via typo-             broken: How does llm safety training fail? Advances in Neu-      584
+ 527        graphic visual prompts. In Proceedings of the AAAI Con-                  ral Information Processing Systems, 36:80079–80110, 2023.        585
+ 528        ference on Artificial Intelligence, pages 23951–23959, 2025.             2                                                                586
+ 529        2                                                                   [19] Dongyu Yao, Jianshu Zhang, Ian G Harris, and Marcel Carls-       587
+ 530    [6] Yunhao Gou, Kai Chen, Zhili Liu, Lanqing Hong, Hang                      son. Fuzzllm: A novel and universal fuzzing framework            588
+ 531        Xu, Zhenguo Li, Dit-Yan Yeung, James T Kwok, and Yu                      for proactively discovering jailbreak vulnerabilities in large   589
+ 532        Zhang. Eyes closed, safety on: Protecting multimodal llms                language models. In ICASSP 2024-2024 IEEE Interna-               590
+ 533        via image-to-text transformation. In European Conference                 tional Conference on Acoustics, Speech and Signal Process-       591
+ 534        on Computer Vision, pages 388–404. Springer, 2024. 3, 6                  ing (ICASSP), pages 4485–4489. IEEE, 2024. 1                     592
+ 535    [7] Daniel Kang, Xuechen Li, Ion Stoica, Carlos Guestrin, Matei         [20] Weihao Yu, Zhengyuan Yang, Linjie Li, Jianfeng Wang,             593
+ 536        Zaharia, and Tatsunori Hashimoto. Exploiting programmatic                Kevin Lin, Zicheng Liu, Xinchao Wang, and Lijuan Wang.           594
+ 537        behavior of llms: Dual-use through standard security attacks.            Mm-vet: Evaluating large multimodal models for integrated        595
+ 538        In 2024 IEEE Security and Privacy Workshops (SPW), pages                 capabilities. arXiv preprint arXiv:2308.02490, 2023. 5           596
+ 539        132–143. IEEE, 2024. 1                                              [21] Zhou Yu, Jun Yu, Yuhao Cui, Dacheng Tao, and Qi Tian.            597
+ 540    [8] Mukai Li, Lei Li, Yuwei Yin, Masood Ahmed, Zhenguang                     Deep modular co-attention networks for visual question an-       598
+ 541        Liu, and Qi Liu. Red teaming visual language models. arXiv               swering. In Proceedings of the IEEE/CVF conference on            599
+ 542        preprint arXiv:2401.12915, 2024. 2                                       computer vision and pattern recognition, pages 6281–6290,        600
+ 543    [9] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee.                 2019. 1                                                          601
+ 544        Visual instruction tuning. Advances in neural information           [22] Yi Zeng, Hongpeng Lin, Jingwen Zhang, Diyi Yang, Ruoxi           602
+ 545        processing systems, 36:34892–34916, 2023. 1                              Jia, and Weiyan Shi. How johnny can persuade llms to jail-       603
+ 546   [10] Xin Liu, Yichen Zhu, Yunshi Lan, Chao Yang, and Yu Qiao.                 break them: Rethinking persuasion to challenge ai safety by      604
+ 547        Query-relevant images jailbreak large multi-modal models.                humanizing llms. In Proceedings of the 62nd Annual Meet-         605
+ 548        arXiv preprint arXiv:2311.17600, 7:14, 2023. 1                           ing of the Association for Computational Linguistics (Volume     606
+ 549   [11] Xin Liu, Yichen Zhu, Jindong Gu, Yunshi Lan, Chao Yang,                  1: Long Papers), pages 14322–14350, 2024. 1, 2                   607
+ 550        and Yu Qiao. Mm-safetybench: A benchmark for safety eval-           [23] Yongting Zhang, Lu Chen, Guodong Zheng, Yifeng Gao, Rui          608
+ 551        uation of multimodal large language models. In European                  Zheng, Jinlan Fu, Zhenfei Yin, Senjie Jin, Yu Qiao, Xuanjing     609
+ 552        Conference on Computer Vision, pages 386–403. Springer,                  Huang, et al. Spa-vl: A comprehensive safety preference          610
+ 553        2024. 1, 5                                                               alignment dataset for vision language models. In Proceed-        611
+ 554   [12] Renjie Pi, Tianyang Han, Jianshu Zhang, Yueqi Xie, Rui Pan,              ings of the Computer Vision and Pattern Recognition Con-         612
+ 555        Qing Lian, Hanze Dong, Jipeng Zhang, and Tong Zhang.                     ference, pages 19867–19878, 2025. 2                              613
+ 556        Mllm-protector: Ensuring mllm’s safety without hurting per-         [24] Yitong Zhang, Jia Li, Liyi Cai, and Ge Li. Davsp: Safety         614
+ 557        formance. arXiv preprint arXiv:2401.02906, 2024. 2, 6                    alignment for large vision-language models via deep aligned      615
+
+
+                                                                            9
+REDACTED
+
+
+ 616        visual safety prompt. arXiv preprint arXiv:2506.09353,
+ 617        2025. 3, 6
+ 618   [25] Yuqi Zhou, Lin Lu, Hanchi Sun, Pan Zhou, and Lichao Sun.
+ 619        Virtual context: Enhancing jailbreak attacks with special to-
+ 620        ken injection. arXiv preprint arXiv:2406.19845, 2024. 2
+ 621   [26] Deyao Zhu, Jun Chen, Xiaoqian Shen, Xiang Li, and Mo-
+ 622        hamed Elhoseiny. Minigpt-4: Enhancing vision-language
+ 623        understanding with advanced large language models. arXiv
+ 624        preprint arXiv:2304.10592, 2023. 1
+ 625   [27] Yongshuo Zong, Ondrej Bohdal, Tingyang Yu, Yongxin
+ 626        Yang, and Timothy Hospedales. Safety fine-tuning at (al-
+ 627        most) no cost: A baseline for vision large language models.
+ 628        arXiv preprint arXiv:2402.02207, 2024. 1, 5
+ 629   [28] Andy Zou, Zifan Wang, Nicholas Carlini, Milad Nasr, J Zico
+ 630        Kolter, and Matt Fredrikson. Universal and transferable ad-
+ 631        versarial attacks on aligned language models. arXiv preprint
+ 632        arXiv:2307.15043, 2023. 2
+
+
+
+
+                                                                            10
+
