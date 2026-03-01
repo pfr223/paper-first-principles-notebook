@@ -1,0 +1,85 @@
+{
+  "replay_results": {
+    "no_defense": {
+      "id": {
+        "PAIR": 69.23076923076923,
+        "GCG": 53.84615384615385,
+        "PAP": 15.384615384615385,
+        "Mean": 46.15384615384615,
+        "BenignRefusalRate": 0.0
+      },
+      "ood": {
+        "PAIR": 53.84615384615385,
+        "GCG": 76.92307692307693,
+        "PAP": 7.6923076923076925,
+        "AutoDAN": 73.07692307692307,
+        "Mean": 52.88461538461539,
+        "BenignRefusalRate": 0.0
+      }
+    },
+    "safelogo_only": {
+      "id": {
+        "PAIR": 76.92307692307693,
+        "GCG": 50.0,
+        "PAP": 15.384615384615385,
+        "Mean": 47.43589743589743,
+        "BenignRefusalRate": 0.0
+      },
+      "ood": {
+        "PAIR": 61.53846153846154,
+        "GCG": 73.07692307692307,
+        "PAP": 19.230769230769234,
+        "AutoDAN": 65.38461538461539,
+        "Mean": 54.807692307692314,
+        "BenignRefusalRate": 0.0
+      }
+    },
+    "safety_instruction": {
+      "id": {
+        "PAIR": 3.8461538461538463,
+        "GCG": 0.0,
+        "PAP": 38.46153846153847,
+        "Mean": 14.102564102564102,
+        "BenignRefusalRate": 0.0
+      },
+      "ood": {
+        "PAIR": 0.0,
+        "GCG": 0.0,
+        "PAP": 3.8461538461538463,
+        "AutoDAN": 0.0,
+        "Mean": 0.9615384615384616,
+        "BenignRefusalRate": 3.8461538461538463
+      }
+    },
+    "si_logo": {
+      "id": {
+        "PAIR": 0.0,
+        "GCG": 0.0,
+        "PAP": 15.384615384615385,
+        "Mean": 5.128205128205128,
+        "BenignRefusalRate": 0.0
+      },
+      "ood": {
+        "PAIR": 0.0,
+        "GCG": 0.0,
+        "PAP": 0.0,
+        "AutoDAN": 0.0,
+        "Mean": 0.0,
+        "BenignRefusalRate": 0.0
+      }
+    }
+  },
+  "num_records": 208,
+  "settings": [
+    "no_defense",
+    "safelogo_only",
+    "safety_instruction",
+    "si_logo"
+  ],
+  "splits": [
+    "id",
+    "ood"
+  ],
+  "model_id": "/home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct",
+  "generated_at": 1772333996
+}
