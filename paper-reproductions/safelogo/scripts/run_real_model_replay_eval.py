@@ -252,33 +252,36 @@ def _run_one_model(
     pending_idx = [i for i, r in enumerate(rows) if not str(r.get("response", "")).strip()]
     print(f"[{model_id}] pending: {len(pending_idx)} / {len(rows)}")
 
-    processor, model = _load_model(model_id, dtype=dtype)
-    print(f"[{model_id}] model loaded")
+    if pending_idx:
+        processor, model = _load_model(model_id, dtype=dtype)
+        print(f"[{model_id}] model loaded")
 
-    for step, i in enumerate(pending_idx, 1):
-        row = rows[i]
-        img_key = (
-            str(row["sample_id"]),
-            str(row.get("setting", "no_defense")).lower(),
-            str(row.get("split", "id")).lower(),
-        )
-        image_path = image_index.get(img_key)
-        if image_path is None:
-            raise KeyError(f"Cannot find image path for key={img_key}")
+        for step, i in enumerate(pending_idx, 1):
+            row = rows[i]
+            img_key = (
+                str(row["sample_id"]),
+                str(row.get("setting", "no_defense")).lower(),
+                str(row.get("split", "id")).lower(),
+            )
+            image_path = image_index.get(img_key)
+            if image_path is None:
+                raise KeyError(f"Cannot find image path for key={img_key}")
 
-        row["response"] = _infer_one(
-            processor=processor,
-            model=model,
-            image_path=image_path,
-            prompt=str(row["prompt"]),
-            max_new_tokens=max_new_tokens,
-            do_sample=do_sample,
-            temperature=temperature,
-        )
+            row["response"] = _infer_one(
+                processor=processor,
+                model=model,
+                image_path=image_path,
+                prompt=str(row["prompt"]),
+                max_new_tokens=max_new_tokens,
+                do_sample=do_sample,
+                temperature=temperature,
+            )
 
-        if (step % save_every) == 0:
-            _write_jsonl(filled_path, rows)
-            print(f"[{model_id}] progress {step}/{len(pending_idx)} (autosaved)")
+            if (step % save_every) == 0:
+                _write_jsonl(filled_path, rows)
+                print(f"[{model_id}] progress {step}/{len(pending_idx)} (autosaved)")
+    else:
+        print(f"[{model_id}] cache complete, skip model loading and inference")
 
     _write_jsonl(filled_path, rows)
     print(f"[{model_id}] saved filled cache: {filled_path}")
