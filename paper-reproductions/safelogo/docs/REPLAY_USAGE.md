@@ -110,6 +110,44 @@ HF_ENDPOINT=https://hf-mirror.com ~/anaconda3/bin/python scripts/run_real_model_
   --work-dir server_realtest_v2/transfer_eval \
   --max-new-tokens 128 \
   --dtype bf16
+
+# E. 攻击预算曲线（HAR@budget）
+~/anaconda3/bin/python scripts/run_attack_budget_curve_eval.py \
+  --dataset-jsonl server_realtest_v2/dataset_realtest.jsonl \
+  --source-model /home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3 \
+  --target-model /home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct \
+  --setting no_defense \
+  --splits id,ood \
+  --max-rounds 5 \
+  --work-dir server_realtest_v2/budget_eval \
+  --max-new-tokens 128 \
+  --dtype bf16
+
+# F. 迁移矩阵（source_models x target_models）
+~/anaconda3/bin/python scripts/run_transfer_matrix_eval.py \
+  --dataset-jsonl server_realtest_v2/dataset_realtest.jsonl \
+  --source-models /home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3,/home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct \
+  --target-models /home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3,/home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct \
+  --setting no_defense \
+  --splits id,ood \
+  --rounds 4 \
+  --work-dir server_realtest_v2/transfer_matrix \
+  --max-new-tokens 128 \
+  --dtype bf16
+
+# G. 感知质量评测（PSNR/SSIM/(可选LPIPS)）
+~/anaconda3/bin/python scripts/evaluate_logo_perceptual_quality.py \
+  --dataset-jsonl server_realtest_v2/dataset_realtest.jsonl \
+  --orig-setting no_defense \
+  --logo-setting safelogo_only \
+  --work-dir server_realtest_v2/perceptual_quality \
+  --psnr-min 28 \
+  --ssim-min 0.90 \
+  --lpips-max 0.20
+
+# 如果 dataset_jsonl 中是跨机器绝对路径，加前缀映射：
+#   --path-prefix-from /home/jack/paper-first-principles-notebook/paper-reproductions/safelogo/ \
+#   --path-prefix-to /Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/
 ```
 
 输出核心文件：
@@ -117,3 +155,6 @@ HF_ENDPOINT=https://hf-mirror.com ~/anaconda3/bin/python scripts/run_real_model_
 - `server_realtest_v2/replay_eval/multi_model_summary.csv`
 - `server_realtest_v2/replay_eval/multi_model_report.md`
 - `server_realtest_v2/replay_eval/analysis_report.md`
+- `server_realtest_v2/budget_eval/budget_curve_summary.json`
+- `server_realtest_v2/transfer_matrix/transfer_matrix_summary.json`
+- `server_realtest_v2/perceptual_quality/perceptual_quality_summary.json`

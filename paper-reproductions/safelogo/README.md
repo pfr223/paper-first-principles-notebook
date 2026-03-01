@@ -30,6 +30,9 @@
   - `run_real_model_replay_eval.py`（多模型自动推理 + replay 评测）
   - `analyze_replay_results.py`（汇总对比报告 + 失败样例）
   - `run_multiround_transfer_attack_eval.py`（多轮攻击搜索 + 跨模型迁移评测）
+  - `run_attack_budget_curve_eval.py`（攻击预算曲线：HAR@budget）
+  - `run_transfer_matrix_eval.py`（source x target 迁移矩阵评测）
+  - `evaluate_logo_perceptual_quality.py`（PSNR/SSIM/LPIPS 感知质量评测）
 - `notebooks/`
   - `safelogo_first_principles_reproduction.ipynb`
   - `safelogo_first_principles_reproduction.executed.ipynb`
@@ -99,10 +102,56 @@ HF_ENDPOINT=https://hf-mirror.com ~/anaconda3/bin/python scripts/run_real_model_
   --dtype bf16
 ```
 
-## 本轮新增三项改进（已实现）
+## 高级实验（预算曲线 / 迁移矩阵 / 感知质量）
+```bash
+cd /home/jack/paper-first-principles-notebook/paper-reproductions/safelogo
+
+# 1) 攻击预算曲线：round budget 从 1..5 的累计 HAR
+~/anaconda3/bin/python scripts/run_attack_budget_curve_eval.py \
+  --dataset-jsonl server_realtest_v2/dataset_realtest.jsonl \
+  --source-model /home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3 \
+  --target-model /home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct \
+  --setting no_defense \
+  --splits id,ood \
+  --max-rounds 5 \
+  --work-dir server_realtest_v2/budget_eval \
+  --max-new-tokens 128 \
+  --dtype bf16
+
+# 2) 迁移矩阵：source_models x target_models
+~/anaconda3/bin/python scripts/run_transfer_matrix_eval.py \
+  --dataset-jsonl server_realtest_v2/dataset_realtest.jsonl \
+  --source-models /home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3,/home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct \
+  --target-models /home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3,/home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct \
+  --setting no_defense \
+  --splits id,ood \
+  --rounds 4 \
+  --work-dir server_realtest_v2/transfer_matrix \
+  --max-new-tokens 128 \
+  --dtype bf16
+
+# 3) 感知质量：PSNR/SSIM/(可选 LPIPS)
+~/anaconda3/bin/python scripts/evaluate_logo_perceptual_quality.py \
+  --dataset-jsonl server_realtest_v2/dataset_realtest.jsonl \
+  --orig-setting no_defense \
+  --logo-setting safelogo_only \
+  --work-dir server_realtest_v2/perceptual_quality \
+  --psnr-min 28 \
+  --ssim-min 0.90 \
+  --lpips-max 0.20
+
+# 若 dataset 中是其他机器绝对路径，可加路径映射：
+#   --path-prefix-from /home/jack/paper-first-principles-notebook/paper-reproductions/safelogo/ \
+#   --path-prefix-to /Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/
+```
+
+## 本轮新增能力（已实现）
 1. 可扩展压力测试数据集生成：支持自动构造 ID/OOD 图像分布、logo/no-logo 对照与 4 个 setting。
 2. 三态评测与统计稳健性：将单一 ASR 判定升级为 `HAR/ORR/Ambiguous`，并输出 bootstrap 95% CI。
 3. 多轮迁移攻击评测：新增 source->target 的多轮攻击搜索与迁移复放脚本，支持 2xA800 实测。
+4. 攻击预算曲线：输出 `HAR@budget` 与 ambiguous 随预算变化曲线，可识别“仅抗首轮”的伪稳健。
+5. 迁移矩阵评测：输出 source x target 的 `TargetHAR` 与 `TransferHARGivenSourceSuccess`。
+6. 感知质量评测：新增 `PSNR/SSIM/(可选LPIPS)` 与阈值通过率，量化安全-视觉质量权衡。
 
 ## 真实测试结论（V2）
 - 深度报告：`/Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/docs/REALTEST_V2_RESULTS.md`
