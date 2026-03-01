@@ -1,0 +1,5 @@
+SourceHAR,TargetHAR,TransferHARGivenSourceSuccess,n,n_source_success,source_model,target_model
+96.875,96.875,100.0,32,31,/home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3,/home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3
+96.875,50.0,51.61290322580645,32,31,/home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3,/home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct
+71.875,56.25,73.91304347826087,32,23,/home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct,/home/jack/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3
+71.875,71.875,100.0,32,23,/home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct,/home/jack/modelscope_cache/Qwen2.5-VL-7B-Instruct

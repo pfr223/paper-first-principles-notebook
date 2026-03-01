@@ -158,6 +158,12 @@ cd /home/jack/paper-first-principles-notebook/paper-reproductions/safelogo
 - 原始汇总：`/Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/server_realtest_v2/replay_eval/multi_model_summary.json`
 - 失败样例分析：`/Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/server_realtest_v2/replay_eval/analysis_report.md`
 
+## Advanced Eval（small-batch）
+- 统一报告：`/Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/server_realtest_v2/FINAL_REPORT.md`
+- Budget 曲线：`/Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/server_realtest_v2/budget_eval_small/budget_curve_summary.json`
+- Transfer 矩阵：`/Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/server_realtest_v2/transfer_matrix_small/transfer_matrix_summary.json`
+- 感知质量：`/Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/server_realtest_v2/perceptual_quality_small/perceptual_quality_summary.json`
+
 ## 说明
 - 当前结果分两层：
   - 机制级（surrogate）验证 SafeLogo 的核心因果机制和参数趋势。

@@ -1,0 +1,4 @@
+SourceCumHAR,SourceRoundAmbiguousRate,TargetCumHAR,TargetRoundAmbiguousRate,budget_round,n_cases
+96.875,0.0,53.125,0.0,1,32
+96.875,0.0,53.125,0.0,2,32
+96.875,0.0,71.875,0.0,3,32
