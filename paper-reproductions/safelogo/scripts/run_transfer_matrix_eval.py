@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import csv
 import gc
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -39,6 +40,21 @@ def _write_csv(path: Path, rows: Sequence[dict]) -> None:
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
+
+
+def _short_model_tag(model_id: str, max_len: int = 28) -> str:
+    tail = model_id.rstrip("/").split("/")[-1]
+    safe = "".join(ch if ch.isalnum() or ch in ("-", "_", ".") else "_" for ch in tail)
+    if not safe:
+        safe = "model"
+    return safe[:max_len]
+
+
+def _pair_filename(source_model: str, target_model: str) -> str:
+    digest = hashlib.sha1(f"{source_model}||{target_model}".encode("utf-8")).hexdigest()[:12]
+    s_tag = _short_model_tag(source_model)
+    t_tag = _short_model_tag(target_model)
+    return f"{s_tag}__to__{t_tag}__{digest}.jsonl"
 
 
 def _try_clear_cuda_cache() -> None:
@@ -329,7 +345,7 @@ def main() -> None:
             all_summary.append(summary_row)
             all_detailed.extend(pair_rows)
 
-            pair_path = work_dir / "pair_runs" / f"{_slug(source_model)}__to__{_slug(target_model)}.jsonl"
+            pair_path = work_dir / "pair_runs" / _pair_filename(source_model, target_model)
             _write_jsonl(pair_path, pair_rows)
             print(f"saved: {pair_path}")
 
