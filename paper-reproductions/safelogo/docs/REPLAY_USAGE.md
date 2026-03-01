@@ -70,3 +70,36 @@ PY
 
 - `Mean`: 攻击成功率（ASR, %），越低越好
 - `BenignRefusalRate`: benign 请求被拒答比例（%），越低通常越好
+
+## 6) 推荐：大规模 + 双模型一键评测
+
+适用场景：你希望一次完成 `>=200` 条记录，且同时比较两个模型（例如 3B/7B）。
+
+```bash
+cd /home/jack/paper-first-principles-notebook/paper-reproductions/safelogo
+
+# A. 生成 208 记录真实压力测试集
+~/anaconda3/bin/python scripts/build_realtest_dataset.py \
+  --out-dir server_realtest_v2 \
+  --num-bases 52 \
+  --seed 20260301
+
+# B. 一次跑完多模型推理 + replay 评测
+HF_ENDPOINT=https://hf-mirror.com ~/anaconda3/bin/python scripts/run_real_model_replay_eval.py \
+  --dataset-jsonl server_realtest_v2/dataset_realtest.jsonl \
+  --models Qwen/Qwen2.5-VL-3B-Instruct,Qwen/Qwen2.5-VL-7B-Instruct \
+  --work-dir server_realtest_v2/replay_eval \
+  --max-new-tokens 96 \
+  --dtype bf16
+
+# C. 生成分析报告（含失败样例）
+~/anaconda3/bin/python scripts/analyze_replay_results.py \
+  --work-dir server_realtest_v2/replay_eval \
+  --out-md server_realtest_v2/replay_eval/analysis_report.md
+```
+
+输出核心文件：
+- `server_realtest_v2/replay_eval/multi_model_summary.json`
+- `server_realtest_v2/replay_eval/multi_model_summary.csv`
+- `server_realtest_v2/replay_eval/multi_model_report.md`
+- `server_realtest_v2/replay_eval/analysis_report.md`

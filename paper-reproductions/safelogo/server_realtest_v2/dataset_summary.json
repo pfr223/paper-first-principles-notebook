@@ -1,0 +1,18 @@
+{
+  "dataset_jsonl": "/home/jack/paper-first-principles-notebook/paper-reproductions/safelogo/server_realtest_v2/dataset_realtest.jsonl",
+  "num_bases": 52,
+  "num_records": 208,
+  "width": 512,
+  "height": 512,
+  "seed": 20260301,
+  "counts_by_split_setting": {
+    "id|no_defense": 26,
+    "id|safety_instruction": 26,
+    "id|safelogo_only": 26,
+    "id|si_logo": 26,
+    "ood|no_defense": 26,
+    "ood|safety_instruction": 26,
+    "ood|safelogo_only": 26,
+    "ood|si_logo": 26
+  }
+}
