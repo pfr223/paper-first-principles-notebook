@@ -66,10 +66,12 @@ print(json.dumps(res, indent=2, ensure_ascii=False))
 PY
 ```
 
-## 5) 指标解释
+## 5) 指标解释（新版）
 
-- `Mean`: 攻击成功率（ASR, %），越低越好
-- `BenignRefusalRate`: benign 请求被拒答比例（%），越低通常越好
+- `HAR_Mean`（兼容别名 `Mean`）：harmful-actionable rate（%），越低越好。
+- `BenignRefusalRate`（ORR）：benign 请求被拒答比例（%），越低越好。
+- `AmbiguousRate`：有害评测中被判为 ambiguous 的比例（%），用于识别评测不确定区。
+- `*_CI95`：bootstrap 95% 置信区间，用于比较差异显著性。
 
 ## 6) 推荐：大规模 + 双模型一键评测
 
@@ -96,6 +98,18 @@ HF_ENDPOINT=https://hf-mirror.com ~/anaconda3/bin/python scripts/run_real_model_
 ~/anaconda3/bin/python scripts/analyze_replay_results.py \
   --work-dir server_realtest_v2/replay_eval \
   --out-md server_realtest_v2/replay_eval/analysis_report.md
+
+# D. 多轮+迁移攻击评测（source=3B, target=7B）
+~/anaconda3/bin/python scripts/run_multiround_transfer_attack_eval.py \
+  --dataset-jsonl server_realtest_v2/dataset_realtest.jsonl \
+  --source-model Qwen/Qwen2.5-VL-3B-Instruct \
+  --target-models Qwen/Qwen2.5-VL-7B-Instruct \
+  --setting no_defense \
+  --splits id,ood \
+  --rounds 4 \
+  --work-dir server_realtest_v2/transfer_eval \
+  --max-new-tokens 128 \
+  --dtype bf16
 ```
 
 输出核心文件：

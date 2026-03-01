@@ -7,11 +7,7 @@ import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
-
-import torch
-from qwen_vl_utils import process_vision_info
-from transformers import AutoProcessor
+from typing import Any, Dict, List, Sequence, Tuple
 
 from safelogo_real_harness import ReplayAdapter, make_attack_prompt, make_benign_prompt, run_replay_suite, setting_to_safety_instruction
 
@@ -124,7 +120,10 @@ def _index_image_paths(dataset_rows: Sequence[dict]) -> Dict[Tuple[str, str, str
     return idx
 
 
-def _load_model(model_id: str, dtype: str) -> Tuple[AutoProcessor, object]:
+def _load_model(model_id: str, dtype: str) -> Tuple[Any, object]:
+    import torch
+    from transformers import AutoProcessor
+
     processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
     torch_dtype = {
         "bf16": torch.bfloat16,
@@ -167,7 +166,7 @@ def _to_device(inputs: Dict[str, object], model: object) -> Dict[str, object]:
 
 
 def _infer_one(
-    processor: AutoProcessor,
+    processor: Any,
     model: object,
     image_path: str,
     prompt: str,
@@ -175,6 +174,15 @@ def _infer_one(
     do_sample: bool,
     temperature: float,
 ) -> str:
+    import torch
+
+    try:
+        from qwen_vl_utils import process_vision_info
+    except Exception as exc:  # pragma: no cover
+        raise RuntimeError(
+            "qwen_vl_utils is required for image-text preprocessing. "
+            "Please install it in your environment."
+        ) from exc
     messages = [
         {
             "role": "user",
@@ -302,12 +310,21 @@ def _flatten_summary(run_results: Sequence[EvalRunResult]) -> List[dict]:
         replay = run.replay_result.get("replay_results", {})
         for setting, split_map in replay.items():
             for split, metrics in split_map.items():
+                mean_ci = metrics.get("Mean_CI95", [0.0, 0.0])
+                brr_ci = metrics.get("BenignRefusalRate_CI95", [0.0, 0.0])
                 rec = {
                     "model_id": run.model_id,
                     "setting": setting,
                     "split": split,
                     "Mean": float(metrics.get("Mean", 0.0)),
+                    "HAR_Mean": float(metrics.get("HAR_Mean", metrics.get("Mean", 0.0))),
+                    "HAR_CI95_Low": float(mean_ci[0]) if isinstance(mean_ci, list) and len(mean_ci) > 1 else 0.0,
+                    "HAR_CI95_High": float(mean_ci[1]) if isinstance(mean_ci, list) and len(mean_ci) > 1 else 0.0,
                     "BenignRefusalRate": float(metrics.get("BenignRefusalRate", 0.0)),
+                    "ORR_CI95_Low": float(brr_ci[0]) if isinstance(brr_ci, list) and len(brr_ci) > 1 else 0.0,
+                    "ORR_CI95_High": float(brr_ci[1]) if isinstance(brr_ci, list) and len(brr_ci) > 1 else 0.0,
+                    "AmbiguousRate": float(metrics.get("AmbiguousRate", 0.0)),
+                    "BenignAmbiguousRate": float(metrics.get("BenignAmbiguousRate", 0.0)),
                 }
                 for fam in ("PAIR", "GCG", "PAP", "AutoDAN"):
                     if fam in metrics:
@@ -342,12 +359,16 @@ def _write_markdown_report(path: Path, rows: Sequence[dict], run_results: Sequen
     lines.append("")
     lines.append("## Summary Table")
     lines.append("")
-    lines.append("| model_id | setting | split | Mean | BenignRefusalRate |")
-    lines.append("| --- | --- | --- | ---: | ---: |")
+    lines.append("| model_id | setting | split | HAR Mean | HAR CI95 | ORR | ORR CI95 | Ambiguous |")
+    lines.append("| --- | --- | --- | ---: | --- | ---: | --- | ---: |")
     for row in rows:
         lines.append(
             f"| {row['model_id']} | {row['setting']} | {row['split']} | "
-            f"{row.get('Mean', 0.0):.2f} | {row.get('BenignRefusalRate', 0.0):.2f} |"
+            f"{row.get('HAR_Mean', row.get('Mean', 0.0)):.2f} | "
+            f"[{row.get('HAR_CI95_Low', 0.0):.2f}, {row.get('HAR_CI95_High', 0.0):.2f}] | "
+            f"{row.get('BenignRefusalRate', 0.0):.2f} | "
+            f"[{row.get('ORR_CI95_Low', 0.0):.2f}, {row.get('ORR_CI95_High', 0.0):.2f}] | "
+            f"{row.get('AmbiguousRate', 0.0):.2f} |"
         )
     lines.append("")
 
@@ -361,10 +382,11 @@ def _write_markdown_report(path: Path, rows: Sequence[dict], run_results: Sequen
         for row in rows:
             by_model.setdefault(str(row["model_id"]), []).append(row)
         for model_id, model_rows in by_model.items():
-            mean_asr = np_mean([r.get("Mean", 0.0) for r in model_rows])
-            mean_brr = np_mean([r.get("BenignRefusalRate", 0.0) for r in model_rows])
+            mean_har = np_mean([r.get("HAR_Mean", r.get("Mean", 0.0)) for r in model_rows])
+            mean_orr = np_mean([r.get("BenignRefusalRate", 0.0) for r in model_rows])
+            mean_amb = np_mean([r.get("AmbiguousRate", 0.0) for r in model_rows])
             lines.append(
-                f"- `{model_id}` average Mean ASR=`{mean_asr:.2f}`, average BenignRefusalRate=`{mean_brr:.2f}`."
+                f"- `{model_id}` average HAR=`{mean_har:.2f}`, average ORR=`{mean_orr:.2f}`, average Ambiguous=`{mean_amb:.2f}`."
             )
     lines.append("")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")

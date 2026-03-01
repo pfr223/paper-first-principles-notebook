@@ -29,6 +29,7 @@
   - `build_realtest_dataset.py`（生成 >=200 记录真实评测集）
   - `run_real_model_replay_eval.py`（多模型自动推理 + replay 评测）
   - `analyze_replay_results.py`（汇总对比报告 + 失败样例）
+  - `run_multiround_transfer_attack_eval.py`（多轮攻击搜索 + 跨模型迁移评测）
 - `notebooks/`
   - `safelogo_first_principles_reproduction.ipynb`
   - `safelogo_first_principles_reproduction.executed.ipynb`
@@ -84,12 +85,24 @@ HF_ENDPOINT=https://hf-mirror.com ~/anaconda3/bin/python scripts/run_real_model_
 ~/anaconda3/bin/python scripts/analyze_replay_results.py \
   --work-dir server_realtest_v2/replay_eval \
   --out-md server_realtest_v2/replay_eval/analysis_report.md
+
+# 4) 多轮 + 迁移攻击评测（source=3B -> target=7B）
+~/anaconda3/bin/python scripts/run_multiround_transfer_attack_eval.py \
+  --dataset-jsonl server_realtest_v2/dataset_realtest.jsonl \
+  --source-model Qwen/Qwen2.5-VL-3B-Instruct \
+  --target-models Qwen/Qwen2.5-VL-7B-Instruct \
+  --setting no_defense \
+  --splits id,ood \
+  --rounds 4 \
+  --work-dir server_realtest_v2/transfer_eval \
+  --max-new-tokens 128 \
+  --dtype bf16
 ```
 
 ## 本轮新增三项改进（已实现）
 1. 可扩展压力测试数据集生成：支持自动构造 ID/OOD 图像分布、logo/no-logo 对照与 4 个 setting。
-2. 多模型自动评测流水线：支持 3B/7B 一次跑完、断点续跑、自动导出 JSON/CSV/Markdown 汇总。
-3. 结果分析自动化：新增失败样例抓取、跨模型对比与论文设定差异说明，便于直接汇报。
+2. 三态评测与统计稳健性：将单一 ASR 判定升级为 `HAR/ORR/Ambiguous`，并输出 bootstrap 95% CI。
+3. 多轮迁移攻击评测：新增 source->target 的多轮攻击搜索与迁移复放脚本，支持 2xA800 实测。
 
 ## 真实测试结论（V2）
 - 深度报告：`/Users/peiduo/.codex/skills/paper-first-principles-notebook/paper-reproductions/safelogo/docs/REALTEST_V2_RESULTS.md`
